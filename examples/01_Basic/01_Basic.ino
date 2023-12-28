@@ -10,6 +10,7 @@ void setup()
 
 void loop()
 {
+    mt6701.updateCount();
     Serial.print("Angle (radians): ");
     Serial.println(mt6701.getAngleRadians());
     Serial.print("Angle (degrees): ");

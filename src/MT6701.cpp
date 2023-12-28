@@ -84,26 +84,10 @@ int MT6701::getAccumulator()
     return accumulator;
 }
 
-int MT6701::getCount()
-{
-    uint8_t angle_h, angle_l;
-    Wire.beginTransmission(address);
-    Wire.write(0x03); // ANGLE_H register
-    Wire.endTransmission();
-    Wire.requestFrom((int)address, 1);
-    if (Wire.available())
-        angle_h = Wire.read();
-
-    Wire.beginTransmission(address);
-    Wire.write(0x04); // ANGLE_L register
-    Wire.endTransmission();
-    Wire.requestFrom((int)address, 1);
-    if (Wire.available())
-        angle_l = Wire.read() >> 2;
-
-    return (int)((angle_h << 6) | angle_l);
-}
-
+/**
+ * @brief Updates the encoder count.
+ * @note This function is called automatically at regular intervals if hardware permits.
+ */
 void MT6701::updateCount()
 {
     int newCount = getCount();
@@ -118,6 +102,25 @@ void MT6701::updateCount()
     }
     accumulator += diff;
     count = newCount;
+}
+
+int MT6701::getCount()
+{
+    uint8_t data[2];
+    Wire.beginTransmission(address);
+    Wire.write(0x03);                  // Starting register ANGLE_H
+    Wire.endTransmission(false);       // End transmission, but keep the I2C bus active
+    Wire.requestFrom((int)address, 2); // Request two bytes
+    if (Wire.available() == 2)
+    {
+        data[0] = Wire.read(); // ANGLE_H
+        data[1] = Wire.read(); // ANGLE_L
+    }
+
+    int angle_h = data[0];
+    int angle_l = data[1] >> 2;
+
+    return (angle_h << 6) | angle_l;
 }
 
 void MT6701::updateTask(void *pvParameters)

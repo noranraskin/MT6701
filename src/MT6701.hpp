@@ -19,6 +19,7 @@ public:
     int getFullTurns();
     float getTurns();
     int getAccumulator();
+    void updateCount();
 
 private:
     uint8_t address;
@@ -27,7 +28,6 @@ private:
     std::atomic<int> accumulator{0};
 
     int getCount();
-    void updateCount();
 #ifdef ESP32
     static void updateTask(void *pvParameters);
 #endif
