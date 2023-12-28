@@ -9,6 +9,7 @@ class MT6701
 {
 public:
     static constexpr uint8_t DEFAULT_ADDRESS = 0b0000110; // I2C address of the MT6701
+    static constexpr int UPDATE_INTERVAL = 100;           // Update interval in milliseconds
     static constexpr int COUNTS_PER_REVOLUTION = 16384;
     static constexpr float COUNTS_TO_RADIANS = 2.0 * PI / COUNTS_PER_REVOLUTION;
     static constexpr float COUNTS_TO_DEGREES = 360.0 / COUNTS_PER_REVOLUTION;
@@ -16,7 +17,8 @@ public:
     static constexpr int RPM_FILTER_SIZE = 10; // Size of the RPM moving average filter
 
     MT6701(uint8_t device_address = DEFAULT_ADDRESS,
-           int update_interval = 10, int rpm_filter_size = RPM_FILTER_SIZE);
+           int update_interval = UPDATE_INTERVAL,
+           int rpm_filter_size = RPM_FILTER_SIZE);
     void begin();
     float getAngleRadians();
     float getAngleDegrees();
