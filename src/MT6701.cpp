@@ -12,8 +12,9 @@
  * @param device_address I2C address of the MT6701.
  * @param update_interval Interval in milliseconds at which to update the encoder count.
  */
-MT6701::MT6701(uint8_t device_address, int update_interval)
-    : address(device_address), updateIntervalMillis(update_interval)
+MT6701::MT6701(uint8_t device_address, int update_interval, int rpm_filter_size)
+    : address(device_address), updateIntervalMillis(update_interval),
+      rpmFilterSize(rpm_filter_size)
 {
 }
 
@@ -30,6 +31,7 @@ void MT6701::begin()
 #ifdef ESP32
     xTaskCreatePinnedToCore(updateTask, "MT6701 update task", 2048, this, 1, NULL, 1);
 #endif
+    rpmFilter.resize(rpmFilterSize);
 }
 
 /**
@@ -85,6 +87,21 @@ int MT6701::getAccumulator()
 }
 
 /**
+ * @brief Returns the current RPM of the encoder shaft averaged over 'rpmFilterSize' samples.
+ *
+ * @return RPM.
+ */
+float MT6701::getRPM()
+{
+    float sum = 0;
+    for (float value : rpmFilter)
+    {
+        sum += value;
+    }
+    return sum / rpmFilter.size();
+}
+
+/**
  * @brief Updates the encoder count.
  * @note This function is called automatically at regular intervals if hardware permits.
  */
@@ -100,10 +117,25 @@ void MT6701::updateCount()
     {
         diff += COUNTS_PER_REVOLUTION;
     }
+    unsigned long currentTime = millis();
+    unsigned long timeElapsed = currentTime - lastUpdateTime;
+    if (timeElapsed > 0)
+    {
+        // Calculate RPM
+        rpm = (diff / (float)COUNTS_PER_REVOLUTION) * (SECONDS_PER_MINUTE * 1000 / (float)timeElapsed);
+        updateRPMFilter(rpm);
+    }
     accumulator += diff;
     count = newCount;
+    lastUpdateTime = currentTime;
 }
 
+void MT6701::updateRPMFilter(float newRPM)
+{
+
+    rpmFilter[rpmFilterIndex] = newRPM;
+    rpmFilterIndex = (rpmFilterIndex + 1) % RPM_FILTER_SIZE;
+}
 int MT6701::getCount()
 {
     uint8_t data[2];
