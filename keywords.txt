@@ -1,0 +1,24 @@
+#######################################
+# Syntax Coloring Map For MT6701
+#######################################
+
+# Datatypes (KEYWORD1)
+MT6701	        KEYWORD1
+
+# Methods (KEYWORD2)
+begin	        KEYWORD2
+getAngleRadians	KEYWORD2
+getAngleDegrees	KEYWORD2
+getFullTurns    KEYWORD2
+getTurns        KEYWORD2
+getAccumulator	KEYWORD2
+updateCount     KEYWORD2
+getRPM	        KEYWORD2
+
+# Constants (LITERAL1)
+DEFAULT_ADDRESS	        LITERAL1
+COUNTS_PER_REVOLUTION	LITERAL1
+COUNTS_TO_RADIANS	    LITERAL1
+COUNTS_TO_DEGREES	    LITERAL1
+SECONDS_PER_MINUTE	    LITERAL1
+RPM_FILTER_SIZE	        LITERAL1
