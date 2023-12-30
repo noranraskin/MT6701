@@ -10,8 +10,10 @@
  * @param update_interval Interval in milliseconds at which to update the encoder count.
  * @param rpm_filter_size Size of the RPM moving average filter.
  */
-MT6701::MT6701(uint8_t device_address, int update_interval, int rpm_filter_size)
-    : address(device_address), updateIntervalMillis(update_interval),
+MT6701::MT6701(uint8_t device_address, int update_interval, int rpm_threshold, int rpm_filter_size)
+    : address(device_address),
+      updateIntervalMillis(update_interval),
+      rpmThreshold(rpm_threshold),
       rpmFilterSize(rpm_filter_size)
 {
     rpmFilterMutex = xSemaphoreCreateMutex();
@@ -33,7 +35,7 @@ void MT6701::begin()
 {
     Wire.begin();
     Wire.setClock(400000);
-    xTaskCreatePinnedToCore(updateTask, "MT6701 update task", 2048, this, 3, NULL, 1);
+    xTaskCreatePinnedToCore(updateTask, "MT6701 update task", 2048, this, 2, NULL, 1);
     xSemaphoreTake(rpmFilterMutex, portMAX_DELAY);
     rpmFilter.resize(rpmFilterSize);
     xSemaphoreGive(rpmFilterMutex);
@@ -56,7 +58,7 @@ float MT6701::getAngleRadians()
  */
 float MT6701::getAngleDegrees()
 {
-    return count * COUNTS_TO_DEGREES;
+    return float(count) * COUNTS_TO_DEGREES;
 }
 
 /**
@@ -102,8 +104,9 @@ float MT6701::getRPM()
     {
         sum += value;
     }
+    float rpm = sum / rpmFilter.size();
     xSemaphoreGive(rpmFilterMutex);
-    return sum / rpmFilter.size();
+    return rpm;
 }
 
 /**
@@ -123,6 +126,10 @@ int MT6701::getCount()
 void MT6701::updateCount()
 {
     int newCount = readCount();
+    if (newCount < 0)
+    {
+        return;
+    }
     int diff = newCount - count;
     if (diff > COUNTS_PER_REVOLUTION / 2)
     {
@@ -138,7 +145,10 @@ void MT6701::updateCount()
     {
         // Calculate RPM
         rpm = (diff / (float)COUNTS_PER_REVOLUTION) * (SECONDS_PER_MINUTE * 1000 / (float)timeElapsed);
-        updateRPMFilter(rpm);
+        if (abs(rpm) < rpmThreshold)
+        {
+            updateRPMFilter(rpm);
+        }
     }
     accumulator += diff;
     count = newCount;
@@ -160,16 +170,19 @@ int MT6701::readCount()
     Wire.write(0x03);                  // Starting register ANGLE_H
     Wire.endTransmission(false);       // End transmission, but keep the I2C bus active
     Wire.requestFrom((int)address, 2); // Request two bytes
-    if (Wire.available() == 2)
+    unsigned long startTime = millis();
+    while (Wire.available() < 2)
     {
-        data[0] = Wire.read(); // ANGLE_H
-        data[1] = Wire.read(); // ANGLE_L
+        if (millis() - startTime > 100)
+        {
+            return -1;
+        }
     }
 
     int angle_h = data[0];
     int angle_l = data[1] >> 2;
 
-    return (angle_h << 6) | angle_l;
+    return (angle_h << 6) | angle_l; // returns value from 0 to 16383
 }
 
 void MT6701::updateTask(void *pvParameters)
@@ -178,6 +191,11 @@ void MT6701::updateTask(void *pvParameters)
     while (true)
     {
         mt6701->updateCount();
-        vTaskDelay(pdMS_TO_TICKS(mt6701->updateIntervalMillis));
+        unsigned int delayMS = mt6701->lastUpdateTime + mt6701->updateIntervalMillis - millis();
+        if (delayMS > 0)
+        {
+            TickType_t delay = pdMS_TO_TICKS(delayMS);
+            vTaskDelay(delay);
+        }
     }
 }
