@@ -29,7 +29,7 @@ void MT6701::begin()
     Wire.begin();
     Wire.setClock(400000);
 #ifdef ESP32
-    xTaskCreatePinnedToCore(updateTask, "MT6701 update task", 2048, this, 1, NULL, 1);
+    xTaskCreatePinnedToCore(updateTask, "MT6701 update task", 2048, this, 3, NULL, 1);
 #endif
     rpmFilter.resize(rpmFilterSize);
 }
@@ -41,7 +41,9 @@ void MT6701::begin()
  */
 float MT6701::getAngleRadians()
 {
-    int count = getCount();
+#ifndef ESP32
+    updateCount();
+#endif
     return count * COUNTS_TO_RADIANS;
 }
 
@@ -52,7 +54,9 @@ float MT6701::getAngleRadians()
  */
 float MT6701::getAngleDegrees()
 {
-    int count = getCount();
+#ifndef ESP32
+    updateCount();
+#endif
     return count * COUNTS_TO_DEGREES;
 }
 
@@ -63,6 +67,9 @@ float MT6701::getAngleDegrees()
  */
 int MT6701::getFullTurns()
 {
+#ifndef ESP32
+    updateCount();
+#endif
     return accumulator / COUNTS_PER_REVOLUTION;
 }
 
@@ -102,12 +109,22 @@ float MT6701::getRPM()
 }
 
 /**
+ * @brief Returns the current encoder count.
+ *
+ * @return Raw count value.
+ */
+int MT6701::getCount()
+{
+    return count;
+}
+
+/**
  * @brief Updates the encoder count.
  * @note This function is called automatically at regular intervals if hardware permits.
  */
 void MT6701::updateCount()
 {
-    int newCount = getCount();
+    int newCount = readCount();
     int diff = newCount - count;
     if (diff > COUNTS_PER_REVOLUTION / 2)
     {
@@ -136,7 +153,7 @@ void MT6701::updateRPMFilter(float newRPM)
     rpmFilter[rpmFilterIndex] = newRPM;
     rpmFilterIndex = (rpmFilterIndex + 1) % RPM_FILTER_SIZE;
 }
-int MT6701::getCount()
+int MT6701::readCount()
 {
     uint8_t data[2];
     Wire.beginTransmission(address);

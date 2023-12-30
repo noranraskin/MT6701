@@ -25,22 +25,23 @@ public:
     int getFullTurns();
     float getTurns();
     int getAccumulator();
-    void updateCount();
+    int getCount();
     float getRPM();
+    void updateCount();
 
 private:
     uint8_t address;
     int updateIntervalMillis;
-    unsigned long lastUpdateTime;
+    std::atomic<unsigned long> lastUpdateTime{0};
     std::atomic<int> count{0};
     std::atomic<int> accumulator{0};
     std::atomic<float> rpm{0};
     std::vector<float> rpmFilter;
     int rpmFilterIndex = 0;
     int rpmFilterSize;
+    int readCount();
 
     void updateRPMFilter(float newRPM);
-    int getCount();
 #ifdef ESP32
     static void updateTask(void *pvParameters);
 #endif

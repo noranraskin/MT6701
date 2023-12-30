@@ -87,6 +87,10 @@ MT6701 encoder(MT6701::DEFAULT_ADDRESS, MT6701::UPDATE_INTERVAL, 20); //  Filter
 - `getAngleDegrees()`: Get the current angle in degrees.
 - `getAccumulator()`: Get the accumulated count.
 - `getRPM()`: Get the current RPM.
+- `getCount()`: Get the raw count value from the sensor.
+- `updateCount()`: Update the count value from the sensor. This is only needed for Arduino environments.
+- `getTurns()`: Get the number of turns the shaft has made since startup.
+- `getFullTurns()`: Get the number of full turns the shaft has made since startup.
 
 **Constants:**
 - `DEFAULT_ADDRESS`: Default I2C address of the MT6701 encoder.
