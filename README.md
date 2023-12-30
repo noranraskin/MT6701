@@ -1,13 +1,13 @@
-# MT6701 Magnetic Rotary Encoder Library for Arduino and ESP32
+# MT6701 Magnetic Rotary Encoder Library for ESP32
 
-The MT6701 library provides a simple and effective way to interface with the MT6701 magnetic rotary encoder using Arduino and ESP32. It supports reading angular positions in radians and degrees, calculating rotational velocity in RPM, and smoothing RPM values with a moving average filter. The sensor uses I2C.
+The MT6701 library provides a simple and effective way to interface with the MT6701 magnetic rotary encoder using ESP32. It supports reading angular positions in radians and degrees, calculating rotational velocity in RPM, and smoothing RPM values with a moving average filter. The sensor uses I2C.
 
 ## Features
 
 - Read angular position in radians and degrees.
 - Calculate rotational velocity (RPM).
 - Smooth RPM readings with a moving average filter.
-- Easy-to-use interface for Arduino and ESP32 environments.
+- Easy-to-use interface for ESP32 environments.
 
 ## Installation
 
@@ -65,7 +65,7 @@ void loop() {
 
 **Changing Update Interval**
 
-You can modify the update interval of the encoder readings (default is 100 ms) by passing the interval in milliseconds to the constructor:
+You can modify the update interval of the encoder readings (default is 50 ms) by passing the interval in milliseconds to the constructor:
 
 ```cpp
 MT6701 encoder(MT6701::DEFAULT_ADDRESS, 200); // Update interval set to 200 ms

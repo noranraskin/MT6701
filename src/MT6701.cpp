@@ -1,9 +1,6 @@
 #include <Wire.h>
-// Imports for ESP32
-#ifdef ESP32
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
-#endif
 #include "MT6701.hpp"
 
 /**
@@ -11,27 +8,35 @@
  *
  * @param device_address I2C address of the MT6701.
  * @param update_interval Interval in milliseconds at which to update the encoder count.
+ * @param rpm_filter_size Size of the RPM moving average filter.
  */
 MT6701::MT6701(uint8_t device_address, int update_interval, int rpm_filter_size)
     : address(device_address), updateIntervalMillis(update_interval),
       rpmFilterSize(rpm_filter_size)
 {
+    rpmFilterMutex = xSemaphoreCreateMutex();
+}
+
+MT6701::~MT6701()
+{
+    if (rpmFilterMutex)
+    {
+        vSemaphoreDelete(rpmFilterMutex);
+    }
 }
 
 /**
  * @brief Initialises the MT6701 encoder.
  * @note This function must be called before any other MT6701 functions.
- * @note If hardware permits, this function starts a background task to update
- *       the encoder count at regular intervals.
  */
 void MT6701::begin()
 {
     Wire.begin();
     Wire.setClock(400000);
-#ifdef ESP32
     xTaskCreatePinnedToCore(updateTask, "MT6701 update task", 2048, this, 3, NULL, 1);
-#endif
+    xSemaphoreTake(rpmFilterMutex, portMAX_DELAY);
     rpmFilter.resize(rpmFilterSize);
+    xSemaphoreGive(rpmFilterMutex);
 }
 
 /**
@@ -41,9 +46,6 @@ void MT6701::begin()
  */
 float MT6701::getAngleRadians()
 {
-#ifndef ESP32
-    updateCount();
-#endif
     return count * COUNTS_TO_RADIANS;
 }
 
@@ -54,9 +56,6 @@ float MT6701::getAngleRadians()
  */
 float MT6701::getAngleDegrees()
 {
-#ifndef ESP32
-    updateCount();
-#endif
     return count * COUNTS_TO_DEGREES;
 }
 
@@ -67,9 +66,6 @@ float MT6701::getAngleDegrees()
  */
 int MT6701::getFullTurns()
 {
-#ifndef ESP32
-    updateCount();
-#endif
     return accumulator / COUNTS_PER_REVOLUTION;
 }
 
@@ -100,11 +96,13 @@ int MT6701::getAccumulator()
  */
 float MT6701::getRPM()
 {
+    xSemaphoreTake(rpmFilterMutex, portMAX_DELAY);
     float sum = 0;
     for (float value : rpmFilter)
     {
         sum += value;
     }
+    xSemaphoreGive(rpmFilterMutex);
     return sum / rpmFilter.size();
 }
 
@@ -149,10 +147,12 @@ void MT6701::updateCount()
 
 void MT6701::updateRPMFilter(float newRPM)
 {
-
+    xSemaphoreTake(rpmFilterMutex, portMAX_DELAY);
     rpmFilter[rpmFilterIndex] = newRPM;
     rpmFilterIndex = (rpmFilterIndex + 1) % RPM_FILTER_SIZE;
+    xSemaphoreGive(rpmFilterMutex);
 }
+
 int MT6701::readCount()
 {
     uint8_t data[2];
