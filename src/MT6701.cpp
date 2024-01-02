@@ -126,6 +126,9 @@ int MT6701::getCount()
 void MT6701::updateCount()
 {
     int newCount = readCount();
+    // give it four tries
+    for (int i = 0; i < 3 && newCount < 0; i++, newCount = readCount())
+        ;
     if (newCount < 0)
     {
         return;
@@ -171,16 +174,12 @@ int MT6701::readCount()
     Wire.endTransmission(false);       // End transmission, but keep the I2C bus active
     Wire.requestFrom((int)address, 2); // Request two bytes
     unsigned long startTime = millis();
-    while (Wire.available() < 2)
+    if (Wire.available() < 2)
     {
-        if (millis() - startTime > 100)
-        {
-            return -1;
-        }
+        return -1;
     }
-
-    int angle_h = data[0];
-    int angle_l = data[1] >> 2;
+    int angle_h = Wire.read();
+    int angle_l = Wire.read();
 
     return (angle_h << 6) | angle_l; // returns value from 0 to 16383
 }
@@ -188,14 +187,16 @@ int MT6701::readCount()
 void MT6701::updateTask(void *pvParameters)
 {
     MT6701 *mt6701 = static_cast<MT6701 *>(pvParameters);
+    TickType_t delay = pdMS_TO_TICKS(mt6701->updateIntervalMillis);
     while (true)
     {
         mt6701->updateCount();
-        unsigned int delayMS = mt6701->lastUpdateTime + mt6701->updateIntervalMillis - millis();
-        if (delayMS > 0)
-        {
-            TickType_t delay = pdMS_TO_TICKS(delayMS);
-            vTaskDelay(delay);
-        }
+        vTaskDelay(delay);
+        //     unsigned int delayMS = mt6701->lastUpdateTime + mt6701->updateIntervalMillis - millis();
+        //     if (delayMS > 0)
+        //     {
+        //         TickType_t delay = pdMS_TO_TICKS(delayMS);
+        //         vTaskDelay(delay);
+        //     }
     }
 }
