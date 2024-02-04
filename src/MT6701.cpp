@@ -181,7 +181,7 @@ int MT6701::readCount()
     int angle_h = Wire.read();
     int angle_l = Wire.read();
 
-    return (angle_h << 6) | angle_l; // returns value from 0 to 16383
+    return (angle_h << 6) | (angle_l >> 2); // returns value from 0 to 16383
 }
 
 void MT6701::updateTask(void *pvParameters)
