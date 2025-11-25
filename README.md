@@ -8,10 +8,12 @@ The MT6701 library provides a simple and effective way to interface with the MT6
 - Calculate rotational velocity (RPM).
 - Smooth RPM readings with a moving average filter.
 - Easy-to-use interface for ESP32 environments.
+- Uses last available core for background task.
 
 ## Installation
 
 ### Manual Installation
+
 1. Download this library as a ZIP file.
 2. Open the Arduino IDE.
 3. Go to Sketch > Include Library > Add .ZIP Library....
@@ -19,6 +21,7 @@ The MT6701 library provides a simple and effective way to interface with the MT6
 5. Restart the Arduino IDE.
 
 ### Library Manager
+
 1. Open the Arduino IDE.
 2. Go to Sketch > Include Library > Manage Libraries....
 3. Search for "MT6701".
@@ -28,6 +31,7 @@ The MT6701 library provides a simple and effective way to interface with the MT6
 To use the library, include it in your Arduino sketch and follow the steps below.
 
 ### Basic Setup
+
 ```cpp
 #include "MT6701.hpp"
 
@@ -82,6 +86,7 @@ MT6701 encoder(MT6701::DEFAULT_ADDRESS, MT6701::UPDATE_INTERVAL, 20); //  Filter
 ## API Reference
 
 **Methods:**
+
 - `begin()`: Initialize the encoder and start the background task for reading data.
 - `getAngleRadians()`: Get the current angle in radians.
 - `getAngleDegrees()`: Get the current angle in degrees.
@@ -93,6 +98,7 @@ MT6701 encoder(MT6701::DEFAULT_ADDRESS, MT6701::UPDATE_INTERVAL, 20); //  Filter
 - `getFullTurns()`: Get the number of full turns the shaft has made since startup.
 
 **Constants:**
+
 - `DEFAULT_ADDRESS`: Default I2C address of the MT6701 encoder.
 - `RPM_FILTER_SIZE`: Number of samples to average for rpm calculation.
 
