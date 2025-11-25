@@ -9,6 +9,7 @@ The MT6701 library provides a simple and effective way to interface with the MT6
 - Smooth RPM readings with a moving average filter.
 - Easy-to-use interface for ESP32 environments.
 - Uses last available core for background task.
+- Uses passed TwoWire reference or initializes Wire by default.
 
 ## Installation
 
@@ -81,6 +82,17 @@ You can modify the number of samples to average for the moving average filter (d
 
 ```cpp
 MT6701 encoder(MT6701::DEFAULT_ADDRESS, MT6701::UPDATE_INTERVAL, 20); //  Filter size set to 20
+```
+
+**Using a custom TwoWire instance**
+
+The `begin()` method can accept a pointer to a `TwoWire` instance, allowing you to use a different I2C bus, change the bus frequency, or share the same bus with multiple sensors:
+
+```cpp
+#include <Wire.h>
+MT6701 encoder;
+Wire.begin(sdaPin, sclPin, frequency); // Initialize I2C bus
+encoder.begin(&Wire); // Pass the Wire instance to the encoder
 ```
 
 ## API Reference

@@ -6,24 +6,28 @@
 #endif
 #include <freertos/semphr.h>
 
+#include <Wire.h>
+
 class MT6701
 {
 public:
-    static constexpr uint8_t DEFAULT_ADDRESS = 0b0000110; // I2C address of the MT6701
-    static constexpr int UPDATE_INTERVAL = 50;            // Update interval in milliseconds
-    static constexpr int COUNTS_PER_REVOLUTION = 16384;   // 14 bit encoder
+    static constexpr uint8_t DEFAULT_ADDRESS =
+        0b0000110;                                      // I2C address of the MT6701
+    static constexpr int UPDATE_INTERVAL = 50;          // Update interval in milliseconds
+    static constexpr int COUNTS_PER_REVOLUTION = 16384; // 14 bit encoder
     static constexpr float COUNTS_TO_RADIANS = 2.0 * PI / COUNTS_PER_REVOLUTION;
     static constexpr float COUNTS_TO_DEGREES = 360.0 / COUNTS_PER_REVOLUTION;
     static constexpr float SECONDS_PER_MINUTE = 60.0f;
     static constexpr int RPM_THRESHOLD = 1000; // RPM threshold for filtering
-    static constexpr int RPM_FILTER_SIZE = 20; // Size of the RPM moving average filter
+    static constexpr int RPM_FILTER_SIZE =
+        20; // Size of the RPM moving average filter
 
     MT6701(uint8_t device_address = DEFAULT_ADDRESS,
            int update_interval = UPDATE_INTERVAL,
            int rpm_threshold = RPM_THRESHOLD,
            int rpm_filter_size = RPM_FILTER_SIZE);
     ~MT6701();
-    void begin();
+    void begin(TwoWire *wire = NULL);
     float getAngleRadians();
     float getAngleDegrees();
     int getFullTurns();
@@ -45,6 +49,7 @@ private:
     int rpmFilterSize;
     int rpmThreshold;
     SemaphoreHandle_t rpmFilterMutex;
+    TwoWire *i2c = NULL;
 
     int readCount();
 
