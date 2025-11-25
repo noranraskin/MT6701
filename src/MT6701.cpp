@@ -1,7 +1,10 @@
 #include <Wire.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
+// Prevent automated include reordering: FreeRTOS headers must remain above this include
+// clang-format off
 #include "MT6701.hpp"
+// clang-format on
 
 /**
  * @brief Constructs an MT6701 encoder object.
@@ -31,10 +34,18 @@ MT6701::~MT6701()
  * @brief Initialises the MT6701 encoder.
  * @note This function must be called before any other MT6701 functions.
  */
-void MT6701::begin()
+void MT6701::begin(TwoWire *wire)
 {
-    Wire.begin();
-    Wire.setClock(400000);
+    if (wire == NULL)
+    {
+        this->i2c = &Wire;
+        this->i2c->begin();
+        // this->i2c->setClock(400000);
+    }
+    else
+    {
+        this->i2c = wire;
+    }
     xTaskCreatePinnedToCore(updateTask, "MT6701 update task", 2048, this, 2, NULL,
                             portNUM_PROCESSORS - 1);
     xSemaphoreTake(rpmFilterMutex, portMAX_DELAY);
@@ -161,17 +172,17 @@ void MT6701::updateRPMFilter(float newRPM)
 int MT6701::readCount()
 {
     uint8_t data[2];
-    Wire.beginTransmission(address);
-    Wire.write(0x03);                  // Starting register ANGLE_H
-    Wire.endTransmission(false);       // End transmission, but keep the I2C bus active
-    Wire.requestFrom((int)address, 2); // Request two bytes
+    i2c->beginTransmission(address);
+    i2c->write(0x03);                  // Starting register ANGLE_H
+    i2c->endTransmission(false);       // End transmission, but keep the I2C bus active
+    i2c->requestFrom((int)address, 2); // Request two bytes
     unsigned long startTime = millis();
-    if (Wire.available() < 2)
+    if (i2c->available() < 2)
     {
         return -1;
     }
-    int angle_h = Wire.read();
-    int angle_l = Wire.read();
+    int angle_h = i2c->read();
+    int angle_l = i2c->read();
 
     return (angle_h << 6) | angle_l; // returns value from 0 to 16383
 }
