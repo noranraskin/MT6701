@@ -165,7 +165,7 @@ void MT6701::updateRPMFilter(float newRPM)
 {
     xSemaphoreTake(rpmFilterMutex, portMAX_DELAY);
     rpmFilter[rpmFilterIndex] = newRPM;
-    rpmFilterIndex = (rpmFilterIndex + 1) % RPM_FILTER_SIZE;
+    rpmFilterIndex = (rpmFilterIndex + 1) % rpmFilter.size();
     xSemaphoreGive(rpmFilterMutex);
 }
 
